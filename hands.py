@@ -42,7 +42,8 @@ def execute_trade(trade_data: dict) -> str:
     if not trade_data or not trade_data.get('symbol'):
         return "Skipped: Invalid payload"
     
-    symbol = trade_data['symbol'].upper()
+    symbol = trade_data['symbol'].upper().replace("/", "").replace("-", "").replace(" ", "")
+    
     if not symbol.endswith("USDT"):
         symbol += "USDT"
         
