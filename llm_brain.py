@@ -75,7 +75,3 @@ def parse_with_llm(text: str) -> List[dict]:
             else:
                 print(f"[ERROR] Final LLM Parsing Error: {e}")
                 return []
-
-    except Exception as e:
-        print(f"[ERROR] LLM Parsing Error: {e}")
-        return []
