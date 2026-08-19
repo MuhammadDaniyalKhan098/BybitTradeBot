@@ -137,7 +137,7 @@ def _place_hybrid_trade(symbol: str, data: dict) -> str:
             chunk_qty = round(total_qty * chunk_pct, qty_prec)
             tp_price = float(tp['price'])
             
-            trigger_dir = 1 if tp_price > cur_price else 2
+            trigger_dir = 1 if tp_price > ref_price else 2
             
             session.place_order(
                 category="linear",
