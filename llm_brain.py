@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Literal, Optional
 from pydantic import BaseModel
 from google import genai
@@ -32,37 +33,48 @@ def parse_with_llm(text: str) -> List[dict]:
     Do not parse analysis or potential setups.
     """
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=f"{system_prompt}\n\nMessage:\n{text}",
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=list[TradeSignal],
-                temperature=0.0,
-            ),
-        )
-        
-        signals = response.parsed
-        if not signals:
-            return []
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.7-flash",
+                contents=f"{system_prompt}\n\nMessage:\n{text}",
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=list[TradeSignal],
+                    temperature=0.0,
+                ),
+            )
+            
+            signals = response.parsed
+            if not signals:
+                return []
 
-        valid_signals = []
-        for sig in signals:
-            if sig.action == "IGNORE":
-                continue
-            
-            sig_dict = sig.model_dump(exclude_none=True)
-            
-            if sig.action == "NEW_TRADE":
-                if "sl" in sig_dict and "tps" in sig_dict and len(sig_dict["tps"]) > 0:
-                    valid_signals.append(sig_dict)
-                else:
-                    print(f"[INFO] Dropped incomplete signal for {sig.symbol}")
-            else:
-                valid_signals.append(sig_dict)
+            valid_signals = []
+            for sig in signals:
+                if sig.action == "IGNORE":
+                    continue
                 
-        return valid_signals
+                sig_dict = sig.model_dump(exclude_none=True)
+                
+                if sig.action == "NEW_TRADE":
+                    if "sl" in sig_dict and "tps" in sig_dict and len(sig_dict["tps"]) > 0:
+                        valid_signals.append(sig_dict)
+                    else:
+                        print(f"[INFO] Dropped incomplete signal for {sig.symbol}")
+                else:
+                    valid_signals.append(sig_dict)
+                    
+            return valid_signals
+
+        except Exception as e:
+            print(f"[WARN] LLM Attempt {attempt + 1} failed: {e}")
+            if "503" in str(e) and attempt < max_retries - 1:
+                print("[INFO] Waiting 2 seconds before retrying...")
+                time.sleep(2)
+            else:
+                print(f"[ERROR] Final LLM Parsing Error: {e}")
+                return []
 
     except Exception as e:
         print(f"[ERROR] LLM Parsing Error: {e}")
