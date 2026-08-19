@@ -1,0 +1,7 @@
+google-genai       # The new, official Gemini SDK
+pydantic           # For strict JSON schema enforcement
+telethon           # For reading the Telegram channel
+pybit              # Bybit's official API client
+Flask              # For the Render keep-alive server
+requests           # For the Google Sheets logger
+python-dotenv      # For managing local environment variables safely
